@@ -9,6 +9,10 @@ const GT = 'GT';
 const EQ = 'EQ';
 const AND = 'AND';
 const OR = 'OR';
+const JUMP = 'JUMP';
+const JUMPI =  'JUMPI';
+
+
 
 
 
@@ -19,6 +23,13 @@ class Interpreter{
       stack: [],
       code: []
     };
+  }
+
+
+  jump() {
+    const destination = this.state.stack.pop();
+    this.state.programCounter = destination;
+    this.state.programCounter--; 
   }
 
   runCode(code){
@@ -60,6 +71,15 @@ class Interpreter{
 
             this.state.stack.push(result);
             break;
+          case JUMP:
+            this.jump();
+            break;
+          
+          case JUMPI:
+            const condition = this.state.stack.pop(); 
+            if (condition === 1){
+              this.jump();
+            }
      
           default:
             break;
@@ -108,3 +128,11 @@ console.log('The result of 1 AND 0 is: ', result);
 code = [PUSH,1,PUSH,1,OR,STOP];
 result = new Interpreter().runCode(code);
 console.log('The result of 1 OR 1 is: ', result);
+
+code = [PUSH, 6 ,JUMP, PUSH , 0 , JUMP, PUSH , 'jump successfull',STOP];
+result = new Interpreter().runCode(code)
+console.log('Result of JUMP: ',result) 
+
+code = [PUSH, 8 , PUSH , 1 , JUMPI , PUSH , 0 , JUMP, PUSH , 'jump successfull',STOP];
+result = new Interpreter().runCode(code)
+console.log('Result of JUMPI: ',result)
