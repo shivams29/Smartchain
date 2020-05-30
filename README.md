@@ -1,3 +1,16 @@
 # Smartchain
 Ethereum like platform (currently in development).
 The interepreter folder contains an index.js file which is an interpreter for the Smart Contract Language.
+
+# Pre- requisites
+Node JS must be installed. For installation head to this link : https://nodejs.org/en/download/
+Open Command Prompt in the project folder and run the follwoing commands.
+1. npm init -y
+2. npm i jest --save
+3. npm i js-sha3 --save
+
+
+# How to Run
+Open command prompt in the folder
+1. for running tests:- npm run test
+2. for running index.js in interpreter folder:- node ./interpreter/index.js  
