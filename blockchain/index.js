@@ -23,6 +23,27 @@ class Blockchain {
                 .catch((error) => reject(error));
         });
     }
+
+    replaceChain({ chain }) {
+        return new Promise(async (resolve, reject) => {
+            for (let i = 0; i < chain.length; i++) {
+                const block = chain[i];
+                const lastBlockIndex = i - 1;
+                const lastBlock =
+                    lastBlockIndex > 0 ? chain[lastBlockIndex] : null;
+                try {
+                    await Block.validateBlock({ lastBlock, block });
+                } catch {
+                    return reject("Chain synchronization failed!");
+                }
+                console.info(
+                    `-- Validated Block [${block.blockHeaders.number}]`
+                );
+            }
+            this.chain = chain;
+            return resolve("Chain synchronized with root node!");
+        });
+    }
 }
 
 module.exports = Blockchain;
