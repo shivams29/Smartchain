@@ -1,9 +1,11 @@
 const express = require("express");
 const Blockchain = require("../blockchain");
 const Block = require("../blockchain/block");
+const PubSub = require("./pubsub");
 
 const app = express();
 const mainChain = new Blockchain();
+const pubSub = new PubSub({ blockchain: mainChain });
 
 app.get("/", (req, res, next) => {
     return res.json("Welcome to homepage");
@@ -22,6 +24,7 @@ app.get("/blockchain/mine", (req, res, next) => {
     mainChain
         .addBlock({ block })
         .then(() => {
+            pubSub.broadcastBlock({ block });
             res.json(block);
         })
         .catch(next);
@@ -32,6 +35,8 @@ app.use((err, req, res, next) => {
     return res.status(500).json({ message: err.message });
 });
 
-const PORT = 3000;
+const PORT = process.argv.includes("--peer")
+    ? Math.floor(2000 + Math.random() * 1000)
+    : 3000;
 
 app.listen(PORT, () => console.log(`Listening on Port ${PORT}`));

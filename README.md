@@ -1,4 +1,4 @@
-# Blockchain Framework
+# Smartchain
 
 Ethereum like blockchain framework (currently in development) also providing functionality for running smart contracts.
 
@@ -16,7 +16,32 @@ Open command prompt in the root directory and run the following command to insta
 npm install
 ```
 
-#### Running Tests
+#### Environment Setup
+
+This project uses PubNub for networking between different nodes. Follow the steps to set up the network:
+
+1. Create a free account on [PubNub](https://admin.pubnub.com/#/login).
+2. Create an app and copy the publish key and subscribe key for later use.
+3. Create a .env file in the root directory and paste the contents from .env.template.
+4. Add the subscribe and publish keys.
+
+#### Run Project
+
+Use the following commands for running the project.
+
+For running the main server use command:
+
+```
+npm run dev
+```
+
+For running peer nodes, use command:
+
+```
+npm run dev-peer
+```
+
+## Running Tests
 
 Open command prompt in the root directory and run the following command:
 
