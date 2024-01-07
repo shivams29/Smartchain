@@ -24,6 +24,8 @@ This project uses PubNub for networking between different nodes. Follow the step
 2. Create an app and copy the publish key and subscribe key for later use.
 3. Create a .env file in the root directory and paste the contents from .env.template.
 4. Add the subscribe and publish keys.
+5. Add base url. Use `http://localhost` for local env.
+6. Add Root Node PORT. Use `3000` for local env.
 
 #### Run Project
 
