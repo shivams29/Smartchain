@@ -7,6 +7,8 @@ const request = require("request");
 const app = express();
 const mainChain = new Blockchain();
 const pubSub = new PubSub({ blockchain: mainChain });
+const BASE_URL = process.env.BASE_URL;
+const ROOT_PORT = process.env.ROOT_PORT;
 
 app.get("/", (req, res, next) => {
     return res.json("Welcome to homepage");
@@ -41,7 +43,7 @@ const PEER_NODE = process.argv.includes("--peer");
 const PORT = PEER_NODE ? Math.floor(2000 + Math.random() * 1000) : 3000;
 
 if (PEER_NODE) {
-    request("http://localhost:3000/blockchain", (err, res, body) => {
+    request(`${BASE_URL}:${ROOT_PORT}/blockchain`, (err, res, body) => {
         const chain = JSON.parse(body);
         mainChain
             .replaceChain({ chain })
