@@ -1,16 +1,25 @@
-# Smartchain
-Ethereum like platform (currently in development) for running smart contracts on a blockchain.
+# Blockchain Framework
 
+Ethereum like blockchain framework (currently in development) also providing functionality for running smart contracts.
 
-# Pre- requisites
-Node JS must be installed. For installation head to this link : https://nodejs.org/en/download/
-Open Command Prompt in the project folder and run the follwoing commands.
-1. npm init -y
-2. npm i jest --save
-3. npm i js-sha3 --save
+## Project Setup
 
+#### Install Node JS
 
-# How to Run
-Open command prompt in the folder
-1. for running tests:- npm run test
-2. for running index.js in interpreter folder:- node ./interpreter/index.js  
+Node JS must be installed. For installation head to this [link](https://nodejs.org/en/download/) and install node version **v20.10.0**.
+
+#### Install dependencies
+
+Open command prompt in the root directory and run the following command to install the project.
+
+```
+npm install
+```
+
+#### Running Tests
+
+Open command prompt in the root directory and run the following command:
+
+```
+npm run test
+```
