@@ -1,0 +1,16 @@
+{
+    "name": "smartchain",
+    "version": "1.0.0",
+    "description": "Blockchain framework for running smart contracts.",
+    "main": "config.js",
+    "scripts": {
+        "test": "jest"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "jest": "^29.7.0",
+        "js-sha3": "^0.9.3"
+    }
+}
