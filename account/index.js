@@ -32,6 +32,17 @@ class Account {
         const keyFromPublic = ec.keyFromPublic(publicKey, "hex");
         return keyFromPublic.verify(keccakHash(data), signature);
     }
+
+    /**
+     * Function for returning the public details of account as json object
+     * @returns {object} Public details of account
+     */
+    toJson() {
+        return {
+            address: this.address,
+            balance: this.balance,
+        };
+    }
 }
 
 module.exports = Account;
