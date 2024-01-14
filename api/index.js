@@ -1,14 +1,22 @@
 const express = require("express");
-const Blockchain = require("../blockchain");
-const Block = require("../blockchain/block");
-const PubSub = require("./pubsub");
 const request = require("request");
+
+const Account = require("../account");
+const Block = require("../blockchain/block");
+const Blockchain = require("../blockchain");
+const PubSub = require("./pubsub");
+const Transaction = require("../transaction");
+const TransactionQueue = require("../transaction/transaction-queue");
 
 const app = express();
 const mainChain = new Blockchain();
 const pubSub = new PubSub({ blockchain: mainChain });
 const BASE_URL = process.env.BASE_URL;
 const ROOT_PORT = process.env.ROOT_PORT;
+const account = new Account();
+const transactionQueue = new TransactionQueue();
+
+transactionQueue.add(Transaction.createTransaction({ sender: account }));
 
 app.get("/", (req, res, next) => {
     return res.json("Welcome to homepage");
@@ -31,6 +39,19 @@ app.get("/blockchain/mine", (req, res, next) => {
             res.json(block);
         })
         .catch(next);
+});
+
+app.post("/account/transact", (req, res, next) => {
+    const { to, value } = req.body;
+    const transaction = Transaction.createTransaction({
+        sender: !to ? new Account() : account,
+        receiver: to,
+        value,
+    });
+    transactionQueue.add(transaction);
+    res.json({
+        transaction,
+    });
 });
 
 app.use((err, req, res, next) => {

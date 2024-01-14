@@ -21,7 +21,11 @@ const SECONDS = 1000 * MILLISECONDS;
 // Decides the time in which a new block will be mined
 const MINE_RATE = 13 * SECONDS;
 
+// Default account starting balance
+const STARTING_BALANCE = 1000;
+
 module.exports = {
     GENESIS_DATA,
     MINE_RATE,
+    STARTING_BALANCE,
 };
