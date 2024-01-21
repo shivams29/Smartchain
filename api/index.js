@@ -1,5 +1,6 @@
 const express = require("express");
 const request = require("request");
+const bodyParser = require("body-parser");
 
 const Account = require("../account");
 const Block = require("../blockchain/block");
@@ -10,13 +11,19 @@ const TransactionQueue = require("../transaction/transaction-queue");
 
 const app = express();
 const mainChain = new Blockchain();
-const pubSub = new PubSub({ blockchain: mainChain });
 const BASE_URL = process.env.BASE_URL;
-const ROOT_PORT = process.env.ROOT_PORT;
+const ROOT_NODE_PORT = process.env.ROOT_NODE_PORT;
 const account = new Account();
 const transactionQueue = new TransactionQueue();
+const pubSub = new PubSub({ blockchain: mainChain, transactionQueue });
+const newTransaction = Transaction.createTransaction({ sender: account });
+transactionQueue.add(newTransaction);
 
-transactionQueue.add(Transaction.createTransaction({ sender: account }));
+setTimeout(() => {
+    pubSub.broadcastTransaction({ transaction: newTransaction });
+}, 500);
+
+app.use(bodyParser.json());
 
 app.get("/", (req, res, next) => {
     return res.json("Welcome to homepage");
@@ -31,9 +38,10 @@ app.get("/blockchain/mine", (req, res, next) => {
     const lastBlock = mainChain.chain[mainChain.chain.length - 1];
     const block = Block.mineBlock({
         lastBlock: lastBlock,
+        transactionSeries: transactionQueue.getTransactionSeries(),
     });
     mainChain
-        .addBlock({ block })
+        .addBlock({ block, transactionQueue })
         .then(() => {
             pubSub.broadcastBlock({ block });
             res.json(block);
@@ -49,6 +57,7 @@ app.post("/account/transact", (req, res, next) => {
         value,
     });
     transactionQueue.add(transaction);
+    pubSub.broadcastTransaction({ transaction });
     res.json({
         transaction,
     });
@@ -61,10 +70,12 @@ app.use((err, req, res, next) => {
 
 const PEER_NODE = process.argv.includes("--peer");
 
-const PORT = PEER_NODE ? Math.floor(2000 + Math.random() * 1000) : 3000;
+const PORT = PEER_NODE
+    ? Math.floor(2000 + Math.random() * 1000)
+    : ROOT_NODE_PORT;
 
 if (PEER_NODE) {
-    request(`${BASE_URL}:${ROOT_PORT}/blockchain`, (err, res, body) => {
+    request(`${BASE_URL}:${ROOT_NODE_PORT}/blockchain`, (err, res, body) => {
         const chain = JSON.parse(body);
         mainChain
             .replaceChain({ chain })
