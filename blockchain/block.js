@@ -70,7 +70,7 @@ class Block {
      * Static method for mining block
      * @returns {object} New mined block
      */
-    static mineBlock({ lastBlock, beneficiary, transactionSeries }) {
+    static mineBlock({ lastBlock, beneficiary, transactionSeries, stateRoot }) {
         const target = Block.calculateBlockTargetHash({ lastBlock });
         let timestamp, truncatedBlockHeaders, header, nonce, underTargetHash;
         do {
@@ -86,6 +86,7 @@ class Block {
                  * This will be refactored when tries are implemented.
                  */
                 transactionsRoot: keccakHash(transactionSeries),
+                stateRoot,
             };
 
             //temporary header is generated

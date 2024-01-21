@@ -30,6 +30,7 @@ describe("Block", () => {
                 lastBlock,
                 beneficiary: "beneficiary",
                 transactionSeries: [],
+                stateRoot: "",
             });
         });
 

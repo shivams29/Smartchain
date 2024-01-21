@@ -18,7 +18,6 @@ class Blockchain {
             })
                 .then(() => {
                     this.chain.push(block);
-                    console.log(`New Bllock is this `, block);
                     transactionQueue.clearBlockTransactions(
                         block.transactionSeries
                     );
