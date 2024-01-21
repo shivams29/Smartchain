@@ -141,5 +141,56 @@ class Transaction {
             return resolve();
         });
     }
+
+    /**
+     * Function to execute transaction
+     * @param {object} transaction Transaction object
+     * @param {object} state World state
+     */
+    static runTransaction(transaction, state) {
+        switch (transaction.data.transactionType) {
+            case TRANSACTION_MAP.CREATE_ACCOUNT:
+                this.runCreateAccountTransaction(transaction, state);
+                break;
+            case TRANSACTION_MAP.TRANSACT:
+                this.runStandardTransaction(transaction, state);
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
+     * Function to execute create account transaction
+     * @param {object} transaction Transaction object
+     * @param {object} state World State
+     */
+    static runCreateAccountTransaction(transaction, state) {
+        const { accountData } = transaction.data;
+        const { address } = accountData;
+        state.putAccount(address, accountData);
+    }
+
+    /**
+     * Function to execute standard transaction
+     * @param {object} transaction Transaction object
+     * @param {object} state World State
+     */
+    static runStandardTransaction(transaction, state) {
+        // Get from account address, to account address and value to be transferred
+        const { from, to, value } = transaction;
+
+        // Get from and to accounts using address
+        const fromAccount = state.getAccount(from);
+        const toAccount = state.getAccount(to);
+
+        // Update balance of accounts
+        fromAccount.balance -= value;
+        toAccount.balance += value;
+
+        // Update state
+        state.putAccount(from, fromAccount);
+        state.putAccount(to, toAccount);
+    }
 }
 module.exports = Transaction;

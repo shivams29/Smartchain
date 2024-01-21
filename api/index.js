@@ -11,11 +11,11 @@ const TransactionQueue = require("../transaction/transaction-queue");
 const State = require("../store/state");
 
 const app = express();
-const mainChain = new Blockchain();
+const state = new State();
+const mainChain = new Blockchain(state);
 const BASE_URL = process.env.BASE_URL;
 const ROOT_NODE_PORT = process.env.ROOT_NODE_PORT;
 const account = new Account();
-const state = new State();
 const transactionQueue = new TransactionQueue();
 const pubSub = new PubSub({ blockchain: mainChain, transactionQueue });
 const newTransaction = Transaction.createTransaction({ sender: account });
@@ -42,7 +42,7 @@ app.get("/blockchain/mine", (req, res, next) => {
     const block = Block.mineBlock({
         lastBlock: lastBlock,
         transactionSeries: transactionQueue.getTransactionSeries(),
-        stateRoot: state.getstateRoot(),
+        stateRoot: state.getStateRoot(),
     });
     mainChain
         .addBlock({ block, transactionQueue })

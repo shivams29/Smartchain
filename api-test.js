@@ -43,10 +43,15 @@ const postTransact = ({ to, value }) => {
     });
 };
 
+let toAccountData;
 postTransact({})
     .then((data) => {
         console.log("Create Account Transaction", data);
-        const toAccountData = data.transaction.data.accountData;
+        toAccountData = data.transaction.data.accountData;
+        return getMine();
+    })
+    .then((data) => {
+        console.log("First Mine Response", data);
         return postTransact({ to: toAccountData.address, value: 20 });
     })
     .then((data) => {
@@ -54,5 +59,5 @@ postTransact({})
         return getMine();
     })
     .then((getMineResponse) =>
-        console.log(`Current blockchain `, getMineResponse)
+        console.log("Second mine response", getMineResponse)
     );

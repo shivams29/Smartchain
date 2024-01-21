@@ -1,6 +1,6 @@
 const { GENESIS_DATA, MINE_RATE } = require("../config");
-
 const { keccakHash } = require("../util");
+const Transaction = require("../transaction");
 
 // Length of each hash string
 const HASH_LENGTH = 64;
@@ -175,6 +175,17 @@ class Block {
             }
             return resolve();
         });
+    }
+
+    /**
+     * Function to execute transactions in a block
+     * @param {object} block Block object
+     * @param {object} state World State
+     */
+    static runBlock(block, state) {
+        for (let transaction of block.transactionSeries) {
+            Transaction.runTransaction(transaction, state);
+        }
     }
 }
 

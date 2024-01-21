@@ -1,8 +1,9 @@
 const Block = require("./block");
 
 class Blockchain {
-    constructor() {
+    constructor(state) {
         this.chain = [Block.genesis()];
+        this.state = state;
     }
 
     /**
@@ -18,6 +19,7 @@ class Blockchain {
             })
                 .then(() => {
                     this.chain.push(block);
+                    Block.runBlock(block, this.state);
                     transactionQueue.clearBlockTransactions(
                         block.transactionSeries
                     );
