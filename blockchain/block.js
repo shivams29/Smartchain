@@ -1,6 +1,6 @@
 const { GENESIS_DATA, MINE_RATE } = require("../config");
-
 const { keccakHash } = require("../util");
+const Transaction = require("../transaction");
 
 // Length of each hash string
 const HASH_LENGTH = 64;
@@ -118,7 +118,7 @@ class Block {
      * Validate mined block by comparing it with last block
      * @returns {Promise} Resolve or Reject telling if block is valid or not
      */
-    static validateBlock({ lastBlock, block }) {
+    static validateBlock({ lastBlock, block, state }) {
         return new Promise((resolve, reject) => {
             // Resolve if genesis block.
             if (keccakHash(block) === keccakHash(Block.genesis())) {
@@ -173,8 +173,21 @@ class Block {
                     )
                 );
             }
-            return resolve();
+            Transaction.validateTransactions(block.transactionSeries, state)
+                .then(resolve)
+                .catch(reject);
         });
+    }
+
+    /**
+     * Function to execute transactions in a block
+     * @param {object} block Block object
+     * @param {object} state World State
+     */
+    static runBlock(block, state) {
+        for (let transaction of block.transactionSeries) {
+            Transaction.runTransaction(transaction, state);
+        }
     }
 }
 

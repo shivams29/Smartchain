@@ -1,8 +1,9 @@
 const Block = require("./block");
 
 class Blockchain {
-    constructor() {
+    constructor(state) {
         this.chain = [Block.genesis()];
+        this.state = state;
     }
 
     /**
@@ -15,9 +16,11 @@ class Blockchain {
             Block.validateBlock({
                 lastBlock: this.chain[this.chain.length - 1],
                 block,
+                state: this.state,
             })
                 .then(() => {
                     this.chain.push(block);
+                    Block.runBlock(block, this.state);
                     transactionQueue.clearBlockTransactions(
                         block.transactionSeries
                     );
@@ -35,7 +38,12 @@ class Blockchain {
                 const lastBlock =
                     lastBlockIndex > 0 ? chain[lastBlockIndex] : null;
                 try {
-                    await Block.validateBlock({ lastBlock, block });
+                    await Block.validateBlock({
+                        lastBlock,
+                        block,
+                        state: this.state,
+                    });
+                    Block.runBlock(block, this.state);
                 } catch {
                     return reject("Chain synchronization failed!");
                 }

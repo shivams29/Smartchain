@@ -27,7 +27,7 @@ class State {
      * Function to return root hash
      * @returns {string} Return root hash of state
      */
-    getstateRoot() {
+    getStateRoot() {
         return this.stateTrie.rootHash;
     }
 }
