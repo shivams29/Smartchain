@@ -1,18 +1,21 @@
+const PubNub = require("pubnub");
+const Transaction = require("../transaction");
+
 const CHANNEL_MAP = {
     TEST: "TEST",
     BLOCK: "BLOCK",
+    TRANSACTION: "TRANSACTION",
 };
 
-const PubNub = require("pubnub");
-
 class PubSub {
-    constructor({ blockchain }) {
+    constructor({ blockchain, transactionQueue }) {
         this.pubNub = new PubNub({
             subscribeKey: process.env.PUB_NUB_SUBSCRIBE_KEY,
             publishKey: process.env.PUB_NUB_PUBLISH_KEY,
             userId: "myUniqueUserId",
         });
         this.blockchain = blockchain;
+        this.transactionQueue = transactionQueue;
         this.subscribeToChannels();
         this.listen();
     }
@@ -41,7 +44,10 @@ class PubSub {
                     case CHANNEL_MAP.BLOCK:
                         const block = JSON.parse(message);
                         this.blockchain
-                            .addBlock({ block })
+                            .addBlock({
+                                block,
+                                transactionQueue: this.transactionQueue,
+                            })
                             .then(() => console.info("New block accepted!"))
                             .catch((error) =>
                                 console.error(
@@ -50,6 +56,13 @@ class PubSub {
                                 )
                             );
                         break;
+
+                    case CHANNEL_MAP.TRANSACTION:
+                        const transaction = JSON.parse(message);
+                        console.log(
+                            `Received transaction ${transaction.id} of type ${transaction.data.transactionType}`
+                        );
+                        this.transactionQueue.add(new Transaction(transaction));
                     default:
                         return;
                 }
@@ -61,6 +74,13 @@ class PubSub {
         this.publish({
             channel: CHANNEL_MAP.BLOCK,
             message: JSON.stringify(block),
+        });
+    }
+
+    broadcastTransaction({ transaction }) {
+        this.publish({
+            channel: CHANNEL_MAP.TRANSACTION,
+            message: JSON.stringify(transaction),
         });
     }
 }

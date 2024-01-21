@@ -12,7 +12,10 @@ const GENESIS_DATA = {
         timestamp: "--genesis-timestamp--",
         // Random multiplier used to achieve target hash
         nonce: 0,
+        // Hash of all transactions stored in block
+        transactionsRoot: "--genesis-transactions-root--",
     },
+    transactionSeries: [],
 };
 
 const MILLISECONDS = 1;

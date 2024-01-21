@@ -15,9 +15,10 @@ const MAX_HASH_VALUE = parseInt(MAX_HASH_STRING, 16);
 const MAX_NONCE_VALUE = 2 ** 64;
 
 class Block {
-    constructor({ blockHeaders }) {
+    constructor({ blockHeaders, transactionSeries }) {
         // Meta data about block
         this.blockHeaders = blockHeaders;
+        this.transactionSeries = transactionSeries;
     }
 
     /**
@@ -69,7 +70,7 @@ class Block {
      * Static method for mining block
      * @returns {object} New mined block
      */
-    static mineBlock({ lastBlock, beneficiary }) {
+    static mineBlock({ lastBlock, beneficiary, transactionSeries }) {
         const target = Block.calculateBlockTargetHash({ lastBlock });
         let timestamp, truncatedBlockHeaders, header, nonce, underTargetHash;
         do {
@@ -80,6 +81,11 @@ class Block {
                 difficulty: Block.adjustDifficulty({ lastBlock, timestamp }),
                 number: lastBlock.blockHeaders.number + 1,
                 timestamp,
+                /**
+                 * Note:
+                 * This will be refactored when tries are implemented.
+                 */
+                transactionsRoot: keccakHash(transactionSeries),
             };
 
             //temporary header is generated
@@ -94,6 +100,7 @@ class Block {
 
         return new this({
             blockHeaders: { ...truncatedBlockHeaders, nonce },
+            transactionSeries: transactionSeries,
         });
     }
 

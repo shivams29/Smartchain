@@ -10,7 +10,7 @@ class Blockchain {
      * @param {object} blockDetails
      * @returns {Promise} Promise which says block added or not
      */
-    addBlock({ block }) {
+    addBlock({ block, transactionQueue }) {
         return new Promise((resolve, reject) => {
             Block.validateBlock({
                 lastBlock: this.chain[this.chain.length - 1],
@@ -18,6 +18,10 @@ class Blockchain {
             })
                 .then(() => {
                     this.chain.push(block);
+                    console.log(`New Bllock is this `, block);
+                    transactionQueue.clearBlockTransactions(
+                        block.transactionSeries
+                    );
                     return resolve();
                 })
                 .catch((error) => reject(error));

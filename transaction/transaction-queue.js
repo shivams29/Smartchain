@@ -24,6 +24,16 @@ class TransactionQueue {
     getTransactionSeries() {
         return Object.values(this.transactionMap);
     }
+
+    /**
+     * Function to clear transactions of mined block from current transaction queue
+     * @param {Array<object>} transactionSeries Transaction series
+     */
+    clearBlockTransactions(transactionSeries) {
+        for (let transaction of transactionSeries) {
+            delete this.transactionMap[transaction.id];
+        }
+    }
 }
 
 module.exports = TransactionQueue;
