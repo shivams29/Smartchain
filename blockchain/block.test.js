@@ -1,5 +1,6 @@
 const Block = require("./block");
 const { keccakHash } = require("../util");
+const State = require("../store/state");
 
 describe("Block", () => {
     describe("calculateBlockTargetHash()", () => {
@@ -30,6 +31,7 @@ describe("Block", () => {
                 lastBlock,
                 beneficiary: "beneficiary",
                 transactionSeries: [],
+                stateRoot: "",
             });
         });
 
@@ -84,10 +86,11 @@ describe("Block", () => {
     });
 
     describe("validateBlock()", () => {
-        let block, lastBlock;
+        let block, lastBlock, state;
 
         beforeEach(() => {
             lastBlock = Block.genesis();
+            state = new State();
             block = Block.mineBlock({
                 lastBlock,
                 beneficiary: "beneficiary",
@@ -96,17 +99,18 @@ describe("Block", () => {
         });
 
         it("resolves when the block is genesis block", () => {
-            expect(Block.validateBlock({ block: Block.genesis() })).resolves;
+            expect(Block.validateBlock({ block: Block.genesis(), state }))
+                .resolves;
         });
 
         it("resolves if block is valid()", () => {
-            expect(Block.validateBlock({ lastBlock, block })).resolves;
+            expect(Block.validateBlock({ lastBlock, block, state })).resolves;
         });
 
         it("rejects when the parent hash is inavlid", () => {
             block.blockHeaders.parentHash = "foo";
             expect(
-                Block.validateBlock({ lastBlock, block })
+                Block.validateBlock({ lastBlock, block, state })
             ).rejects.toMatchObject({
                 message:
                     "The parent hash must be a hash of the last block's header",
@@ -116,7 +120,7 @@ describe("Block", () => {
         it("rejects when the number is inavlid", () => {
             block.blockHeaders.number = 250;
             expect(
-                Block.validateBlock({ lastBlock, block })
+                Block.validateBlock({ lastBlock, block, state })
             ).rejects.toMatchObject({
                 message: "The block must increment the number by 1",
             });
@@ -125,7 +129,7 @@ describe("Block", () => {
         it("rejects when the difficulty is inavlid", () => {
             block.blockHeaders.difficulty = 250;
             expect(
-                Block.validateBlock({ lastBlock, block })
+                Block.validateBlock({ lastBlock, block, state })
             ).rejects.toMatchObject({
                 message: "The difficulty must only adjust by 1",
             });
@@ -140,7 +144,7 @@ describe("Block", () => {
             };
 
             expect(
-                Block.validateBlock({ lastBlock, block })
+                Block.validateBlock({ lastBlock, block, state })
             ).rejects.toMatchObject({
                 message:
                     "The block does not meet the proof of work requirement",

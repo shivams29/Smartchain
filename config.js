@@ -14,6 +14,7 @@ const GENESIS_DATA = {
         nonce: 0,
         // Hash of all transactions stored in block
         transactionsRoot: "--genesis-transactions-root--",
+        stateRoot: "--genesis-root-hash--",
     },
     transactionSeries: [],
 };
