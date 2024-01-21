@@ -18,6 +18,20 @@ const getMine = () => {
 };
 
 /**
+ * Helper function for retrieving balance of account
+ * @param {string} address
+ * @returns {object} JSON parsed body
+ */
+const getBalance = (address = "") => {
+    return new Promise((resolve, reject) => {
+        request(
+            `${APP}/account/balance` + (address ? `/?address=${address}` : ""),
+            (err, res, body) => resolve(JSON.parse(body))
+        );
+    });
+};
+
+/**
  * Helper function for creating transactions
  * @param {{to: string; value: number}} transactionDetails
  * @returns {Promise}
@@ -58,6 +72,14 @@ postTransact({})
         console.log("Standard Transaction", data);
         return getMine();
     })
-    .then((getMineResponse) =>
-        console.log("Second mine response", getMineResponse)
-    );
+    .then((getMineResponse) => {
+        console.log("Second mine response", getMineResponse);
+        return getBalance();
+    })
+    .then((balance) => {
+        console.log("Application account balance", balance);
+        return getBalance(toAccountData.address);
+    })
+    .then((balance) => {
+        console.log("To account balance", balance);
+    });

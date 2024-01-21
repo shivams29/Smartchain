@@ -53,6 +53,12 @@ app.get("/blockchain/mine", (req, res, next) => {
         .catch(next);
 });
 
+app.get("/account/balance", (req, res, next) => {
+    const { address } = req.query;
+    const balance = state.getAccount(address || account.address).balance;
+    res.json({ balance });
+});
+
 app.post("/account/transact", (req, res, next) => {
     const { to, value } = req.body;
     const transaction = Transaction.createTransaction({
