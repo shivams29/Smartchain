@@ -29,6 +29,7 @@ describe("Block", () => {
             minedBlock = Block.mineBlock({
                 lastBlock,
                 beneficiary: "beneficiary",
+                transactionSeries: [],
             });
         });
 
@@ -87,7 +88,11 @@ describe("Block", () => {
 
         beforeEach(() => {
             lastBlock = Block.genesis();
-            block = Block.mineBlock({ lastBlock, beneficiary: "beneficiary" });
+            block = Block.mineBlock({
+                lastBlock,
+                beneficiary: "beneficiary",
+                transactionSeries: [],
+            });
         });
 
         it("resolves when the block is genesis block", () => {
