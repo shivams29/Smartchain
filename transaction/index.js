@@ -59,11 +59,12 @@ class Transaction {
     /**
      * Static method for validating standard transactions
      * @param {object} transaction Transaction object to be validated
+     * @param {object} state World state object
      * @returns {Promise} Resolve/Reject for transaction validation
      */
-    static validateStandardTransaction(transaction) {
+    static validateStandardTransaction(transaction, state) {
         return new Promise((resolve, reject) => {
-            const { id, from, signature } = transaction;
+            const { id, from, signature, to, value } = transaction;
             const transactionData = { ...transaction };
 
             // Deleting signature here because signature is created using transaction data
@@ -84,6 +85,29 @@ class Transaction {
                     signature,
                 })
             ) {
+                const fromAccount = state.getAccount(from);
+                const toAccount = state.getAccount(to);
+                if (!fromAccount) {
+                    return reject(
+                        new Error(
+                            `The specified from account - ${from} does not exist.`
+                        )
+                    );
+                }
+                if (!toAccount) {
+                    return reject(
+                        new Error(
+                            `The specified to account - ${to} does not exist.`
+                        )
+                    );
+                }
+                if (fromAccount.balance < value) {
+                    return reject(
+                        new Error(
+                            `The from account - ${from} does not have sufficient balance to perform this transaction.`
+                        )
+                    );
+                }
                 return resolve();
             } else {
                 return reject(
@@ -138,6 +162,39 @@ class Transaction {
                     );
                 }
             });
+            return resolve();
+        });
+    }
+
+    /**
+     * Function validate transaction series
+     * @param {Array<object>} transactionSeries List of transactions
+     * @param {object} state World state
+     * @returns {Promise}
+     */
+    static validateTransactions(transactionSeries, state) {
+        return new Promise(async (resolve, reject) => {
+            for (let transaction of transactionSeries) {
+                try {
+                    switch (transaction.data.transactionType) {
+                        case TRANSACTION_MAP.CREATE_ACCOUNT:
+                            await Transaction.validateCreateAccountTransaction(
+                                transaction
+                            );
+                            break;
+                        case TRANSACTION_MAP.TRANSACT:
+                            await Transaction.validateStandardTransaction(
+                                transaction,
+                                state
+                            );
+                            break;
+                        default:
+                            break;
+                    }
+                } catch (err) {
+                    return reject(err);
+                }
+            }
             return resolve();
         });
     }

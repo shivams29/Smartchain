@@ -16,6 +16,7 @@ class Blockchain {
             Block.validateBlock({
                 lastBlock: this.chain[this.chain.length - 1],
                 block,
+                state: this.state,
             })
                 .then(() => {
                     this.chain.push(block);
@@ -37,7 +38,12 @@ class Blockchain {
                 const lastBlock =
                     lastBlockIndex > 0 ? chain[lastBlockIndex] : null;
                 try {
-                    await Block.validateBlock({ lastBlock, block });
+                    await Block.validateBlock({
+                        lastBlock,
+                        block,
+                        state: this.state,
+                    });
+                    Block.runBlock(block, this.state);
                 } catch {
                     return reject("Chain synchronization failed!");
                 }
