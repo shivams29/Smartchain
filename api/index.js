@@ -41,6 +41,7 @@ app.get("/blockchain/mine", (req, res, next) => {
     const lastBlock = mainChain.chain[mainChain.chain.length - 1];
     const block = Block.mineBlock({
         lastBlock: lastBlock,
+        beneficiary: account.address,
         transactionSeries: transactionQueue.getTransactionSeries(),
         stateRoot: state.getStateRoot(),
     });

@@ -28,8 +28,12 @@ const MINE_RATE = 13 * SECONDS;
 // Default account starting balance
 const STARTING_BALANCE = 1000;
 
+// Default mining reward
+const MINING_REWARD = 50;
+
 module.exports = {
     GENESIS_DATA,
     MINE_RATE,
     STARTING_BALANCE,
+    MINING_REWARD,
 };

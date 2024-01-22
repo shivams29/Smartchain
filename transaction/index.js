@@ -1,9 +1,12 @@
 const uuid = require("uuid").v4;
 const Account = require("../account");
+const { MINING_REWARD } = require("../config");
+const State = require("../store/state");
 
 const TRANSACTION_MAP = {
     TRANSACT: "TRANSACT",
     CREATE_ACCOUNT: "CREATE_ACCOUNT",
+    MINING_REWARD: "MINING_REWARD",
 };
 
 class Transaction {
@@ -22,12 +25,23 @@ class Transaction {
      *  {
      *      sender: Account Object;
      *      receiver: string;
-     *      value: number
+     *      value: number;
+     *      beneficiary: string;
      *  }
      * } transactionDetails Transaction details
      * @returns {object} Transaction class object
      */
-    static createTransaction({ sender, receiver, value }) {
+    static createTransaction({ sender, receiver, value, beneficiary }) {
+        if (beneficiary) {
+            const transactionData = {
+                to: beneficiary,
+                value: MINING_REWARD,
+                data: {
+                    transactionType: TRANSACTION_MAP.MINING_REWARD,
+                },
+            };
+            return new Transaction(transactionData);
+        }
         if (receiver) {
             // Value exchange transaction
             const transactionData = {
@@ -167,9 +181,37 @@ class Transaction {
     }
 
     /**
+     * Static function for validating mining reward transaction
+     * @param {Transaction} transaction
+     * @returns {Promise}
+     */
+    static validateMiningRewardTransaction(transaction) {
+        return new Promise((resolve, reject) => {
+            if (
+                transaction.data.transactionType !==
+                TRANSACTION_MAP.MINING_REWARD
+            ) {
+                return reject(
+                    new Error(
+                        `Incorrect transaction type for transaction id ${transaction.id}`
+                    )
+                );
+            }
+            if (transaction.value !== MINING_REWARD) {
+                return reject(
+                    new Error(
+                        `The mining reward in transaction id ${transaction.id} is not the standard system mining reward.`
+                    )
+                );
+            }
+            return resolve();
+        });
+    }
+
+    /**
      * Function validate transaction series
-     * @param {Array<object>} transactionSeries List of transactions
-     * @param {object} state World state
+     * @param {Array<Transaction>} transactionSeries List of transactions
+     * @param {State} state World state
      * @returns {Promise}
      */
     static validateTransactions(transactionSeries, state) {
@@ -188,6 +230,11 @@ class Transaction {
                                 state
                             );
                             break;
+                        case TRANSACTION_MAP.MINING_REWARD:
+                            await Transaction.validateMiningRewardTransaction(
+                                transaction
+                            );
+                            break;
                         default:
                             break;
                     }
@@ -201,8 +248,8 @@ class Transaction {
 
     /**
      * Function to execute transaction
-     * @param {object} transaction Transaction object
-     * @param {object} state World state
+     * @param {Transaction} transaction Transaction object
+     * @param {State} state World state
      */
     static runTransaction(transaction, state) {
         switch (transaction.data.transactionType) {
@@ -212,6 +259,8 @@ class Transaction {
             case TRANSACTION_MAP.TRANSACT:
                 this.runStandardTransaction(transaction, state);
                 break;
+            case TRANSACTION_MAP.MINING_REWARD:
+                this.runMiningRewardTransaction(transaction, state);
             default:
                 break;
         }
@@ -219,8 +268,8 @@ class Transaction {
 
     /**
      * Function to execute create account transaction
-     * @param {object} transaction Transaction object
-     * @param {object} state World State
+     * @param {Transaction} transaction Transaction object
+     * @param {State} state World State
      */
     static runCreateAccountTransaction(transaction, state) {
         const { accountData } = transaction.data;
@@ -230,8 +279,8 @@ class Transaction {
 
     /**
      * Function to execute standard transaction
-     * @param {object} transaction Transaction object
-     * @param {object} state World State
+     * @param {Transaction} transaction Transaction object
+     * @param {State} state World State
      */
     static runStandardTransaction(transaction, state) {
         // Get from account address, to account address and value to be transferred
@@ -247,6 +296,18 @@ class Transaction {
 
         // Update state
         state.putAccount(from, fromAccount);
+        state.putAccount(to, toAccount);
+    }
+
+    /**
+     * Static function to execute mining reward transaction
+     * @param {Transaction} transaction
+     * @param {State} state
+     */
+    static runMiningRewardTransaction(transaction, state) {
+        const { to, value } = transaction;
+        const toAccount = state.getAccount(to);
+        toAccount.balance += value;
         state.putAccount(to, toAccount);
     }
 }
