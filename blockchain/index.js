@@ -1,3 +1,4 @@
+const TransactionQueue = require("../transaction/transaction-queue");
 const Block = require("./block");
 
 class Blockchain {
@@ -8,7 +9,7 @@ class Blockchain {
 
     /**
      * Function to add new block
-     * @param {object} blockDetails
+     * @param {{block: Block; transactionQueue: TransactionQueue}} blockDetails
      * @returns {Promise} Promise which says block added or not
      */
     addBlock({ block, transactionQueue }) {
@@ -30,6 +31,11 @@ class Blockchain {
         });
     }
 
+    /**
+     * Function to replace chain
+     * @param {{chain: Blockchain}} param0
+     * @returns {Promise}
+     */
     replaceChain({ chain }) {
         return new Promise(async (resolve, reject) => {
             for (let i = 0; i < chain.length; i++) {

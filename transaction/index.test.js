@@ -1,9 +1,15 @@
 const Transaction = require(".");
 const Account = require("../account");
+const { MINING_REWARD } = require("../config");
 const State = require("../store/state");
 
 describe("Testing transactions", () => {
-    let from, to, transaction, createAccountTransaction, state;
+    let from,
+        to,
+        transaction,
+        createAccountTransaction,
+        state,
+        miningRewardTransaction;
     beforeEach(() => {
         state = new State();
         from = new Account();
@@ -15,6 +21,10 @@ describe("Testing transactions", () => {
         });
         createAccountTransaction = Transaction.createTransaction({
             sender: from,
+        });
+        miningRewardTransaction = Transaction.createTransaction({
+            beneficiary: to.address,
+            value: MINING_REWARD,
         });
     });
 
@@ -108,6 +118,35 @@ describe("Testing transactions", () => {
             ).rejects.toMatchObject({
                 message: `Required account data fields length does not match with received data in transaction id ${createAccountTransaction.id}`,
             });
+        });
+    });
+
+    describe("validateMiningRewardTransaction()", () => {
+        it("invalidates transaction where type is not mining reward", () => {
+            expect(
+                Transaction.validateMiningRewardTransaction(transaction)
+            ).rejects.toMatchObject({
+                message: `Incorrect transaction type for transaction id ${transaction.id}`,
+            });
+        });
+
+        it("invalidates transaction where reward is not standard mining reward", () => {
+            miningRewardTransaction.value = 100;
+            expect(
+                Transaction.validateMiningRewardTransaction(
+                    miningRewardTransaction
+                )
+            ).rejects.toMatchObject({
+                message: `The mining reward in transaction id ${miningRewardTransaction.id} is not the standard system mining reward.`,
+            });
+        });
+
+        it("validates mining reward transaction", () => {
+            expect(
+                Transaction.validateMiningRewardTransaction(
+                    miningRewardTransaction
+                )
+            ).resolves;
         });
     });
 });

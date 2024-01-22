@@ -1,7 +1,8 @@
-const { GENESIS_DATA, MINE_RATE } = require("../config");
+const { GENESIS_DATA, MINE_RATE, MINING_REWARD } = require("../config");
 const { keccakHash } = require("../util");
 const Transaction = require("../transaction");
 const Trie = require("../store/trie");
+const State = require("../store/state");
 
 // Length of each hash string
 const HASH_LENGTH = 64;
@@ -69,7 +70,8 @@ class Block {
 
     /**
      * Static method for mining block
-     * @returns {object} New mined block
+     * @param {{lastBlock: Block; beneficiary: string; transactionSeries: Array<Transaction>; stateRoot: string;}}
+     * @returns {Block} New mined block
      */
     static mineBlock({ lastBlock, beneficiary, transactionSeries, stateRoot }) {
         const target = Block.calculateBlockTargetHash({ lastBlock });
@@ -78,8 +80,16 @@ class Block {
             header,
             nonce,
             underTargetHash,
-            transactionTrie;
+            transactionTrie,
+            miningRewardTransaction;
+
+        miningRewardTransaction = Transaction.createTransaction({
+            beneficiary: beneficiary,
+            value: MINING_REWARD,
+        });
+        transactionSeries.push(miningRewardTransaction);
         transactionTrie = Trie.buildTrie(transactionSeries);
+
         do {
             timestamp = Date.now();
             truncatedBlockHeaders = {
@@ -197,8 +207,8 @@ class Block {
 
     /**
      * Function to execute transactions in a block
-     * @param {object} block Block object
-     * @param {object} state World State
+     * @param {Block} block Block object
+     * @param {State} state World State
      */
     static runBlock(block, state) {
         for (let transaction of block.transactionSeries) {

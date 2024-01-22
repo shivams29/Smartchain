@@ -1,3 +1,4 @@
+const Account = require("../account");
 const Trie = require("./trie");
 
 class State {
@@ -8,7 +9,7 @@ class State {
     /**
      * Function to put account in state trie
      * @param {string} address New account address
-     * @param {object} accountData New account data
+     * @param {Account} accountData New account data
      */
     putAccount(address, accountData) {
         this.stateTrie.put(address, accountData);
@@ -17,7 +18,7 @@ class State {
     /**
      * Function to account data from state trie
      * @param {string} address Address of account
-     * @returns {object} Account data
+     * @returns {Account} Account data
      */
     getAccount(address) {
         return this.stateTrie.get(address);
