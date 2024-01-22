@@ -107,7 +107,16 @@ describe("Block", () => {
             expect(Block.validateBlock({ lastBlock, block, state })).resolves;
         });
 
-        it("rejects when the parent hash is inavlid", () => {
+        it("rejects when transaction root does not match with transaction series", () => {
+            block.transactionSeries = [1234];
+            expect(
+                Block.validateBlock({ lastBlock, block, state })
+            ).rejects.toMatchObject({
+                message: `The rebuilt transactions root does not match the block's transaction root - ${block.blockHeaders.transactionsRoot}`,
+            });
+        });
+
+        it("rejects when the parent hash is invalid", () => {
             block.blockHeaders.parentHash = "foo";
             expect(
                 Block.validateBlock({ lastBlock, block, state })
@@ -117,7 +126,7 @@ describe("Block", () => {
             });
         });
 
-        it("rejects when the number is inavlid", () => {
+        it("rejects when the number is invalid", () => {
             block.blockHeaders.number = 250;
             expect(
                 Block.validateBlock({ lastBlock, block, state })
@@ -126,7 +135,7 @@ describe("Block", () => {
             });
         });
 
-        it("rejects when the difficulty is inavlid", () => {
+        it("rejects when the difficulty is invalid", () => {
             block.blockHeaders.difficulty = 250;
             expect(
                 Block.validateBlock({ lastBlock, block, state })

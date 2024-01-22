@@ -1,3 +1,4 @@
+const { keccakHash } = require("../util");
 const Trie = require("./trie");
 
 describe("testing tire data structure", () => {
@@ -33,6 +34,26 @@ describe("testing tire data structure", () => {
             const retrievedValue = trie.get("testVal");
             value.testVal = 2;
             expect(retrievedValue).not.toEqual(value);
+        });
+    });
+
+    describe("buildTrie()", () => {
+        it("should build a trie for items", () => {
+            let items = [
+                {
+                    testVal: 1,
+                },
+                {
+                    testVal: 2,
+                },
+                {
+                    testVal: 3,
+                },
+            ];
+            let newTrie = Trie.buildTrie(items);
+            expect(newTrie.get(keccakHash(items[0]))).toMatchObject(items[0]);
+            expect(newTrie.get(keccakHash(items[1]))).toMatchObject(items[1]);
+            expect(newTrie.get(keccakHash(items[2]))).toMatchObject(items[2]);
         });
     });
 });

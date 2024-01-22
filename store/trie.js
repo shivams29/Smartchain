@@ -59,5 +59,18 @@ class Trie {
         currNode.value = value;
         this.generateRootHash();
     }
+
+    /**
+     * Static function to build a new trie of provided items
+     * @param {Array<object>} items
+     * @returns {Trie} Trie of objects
+     */
+    static buildTrie(items) {
+        const trie = new this();
+        for (let item of items.sort((a, b) => keccakHash(a) > keccakHash(b))) {
+            trie.put(keccakHash(item), item);
+        }
+        return trie;
+    }
 }
 module.exports = Trie;

@@ -1,6 +1,7 @@
 const { GENESIS_DATA, MINE_RATE } = require("../config");
 const { keccakHash } = require("../util");
 const Transaction = require("../transaction");
+const Trie = require("../store/trie");
 
 // Length of each hash string
 const HASH_LENGTH = 64;
@@ -72,7 +73,13 @@ class Block {
      */
     static mineBlock({ lastBlock, beneficiary, transactionSeries, stateRoot }) {
         const target = Block.calculateBlockTargetHash({ lastBlock });
-        let timestamp, truncatedBlockHeaders, header, nonce, underTargetHash;
+        let timestamp,
+            truncatedBlockHeaders,
+            header,
+            nonce,
+            underTargetHash,
+            transactionTrie;
+        transactionTrie = Trie.buildTrie(transactionSeries);
         do {
             timestamp = Date.now();
             truncatedBlockHeaders = {
@@ -81,11 +88,7 @@ class Block {
                 difficulty: Block.adjustDifficulty({ lastBlock, timestamp }),
                 number: lastBlock.blockHeaders.number + 1,
                 timestamp,
-                /**
-                 * Note:
-                 * This will be refactored when tries are implemented.
-                 */
-                transactionsRoot: keccakHash(transactionSeries),
+                transactionsRoot: transactionTrie.rootHash,
                 stateRoot,
             };
 
@@ -156,6 +159,19 @@ class Block {
             ) {
                 return reject(
                     new Error("The difficulty must only adjust by 1")
+                );
+            }
+            const rebuildTransactionTrie = Trie.buildTrie(
+                block.transactionSeries
+            );
+            if (
+                block.blockHeaders.transactionsRoot !==
+                rebuildTransactionTrie.rootHash
+            ) {
+                return reject(
+                    new Error(
+                        `The rebuilt transactions root does not match the block's transaction root - ${block.blockHeaders.transactionsRoot}`
+                    )
                 );
             }
             const target = Block.calculateBlockTargetHash({ lastBlock });
