@@ -1,4 +1,5 @@
 const request = require("request");
+const { OPCODE_MAP } = require("./interpreter");
 
 const APP = `${process.env.BASE_URL}:${process.env.ROOT_NODE_PORT}`;
 
@@ -10,9 +11,7 @@ const getMine = () => {
     return new Promise((resolve, reject) => {
         // Adding a timeout here to let the transaction queue take already broadcasted messages of server account creation.
         setTimeout(() => {
-            request.get(`${APP}/blockchain/mine`, (error, res, body) =>
-                resolve(JSON.parse(body))
-            );
+            request.get(`${APP}/blockchain/mine`, (error, res, body) => resolve(JSON.parse(body)));
         }, 1000);
     });
 };
@@ -36,7 +35,7 @@ const getBalance = (address = "") => {
  * @param {{to: string; value: number}} transactionDetails
  * @returns {Promise}
  */
-const postTransact = ({ to, value }) => {
+const postTransact = ({ to, value, code, gasLimit }) => {
     return new Promise((resolve, reject) => {
         request.post(
             `${APP}/account/transact`,
@@ -48,6 +47,8 @@ const postTransact = ({ to, value }) => {
                 body: JSON.stringify({
                     to,
                     value,
+                    code,
+                    gasLimit,
                 }),
             },
             (error, res, body) => {
@@ -58,28 +59,52 @@ const postTransact = ({ to, value }) => {
 };
 
 let toAccountData;
+let smartContractAccountData;
+
 postTransact({})
     .then((data) => {
-        console.log("Create Account Transaction", data);
+        console.log("postTransact1(Create new account)", data);
         toAccountData = data.transaction.data.accountData;
         return getMine();
     })
     .then((data) => {
-        console.log("First Mine Response", data);
+        console.log("getMine1(Register application account and new account)", data);
         return postTransact({ to: toAccountData.address, value: 20 });
     })
     .then((data) => {
-        console.log("Standard Transaction", data);
+        console.log("postTransact2(Transfer 20 from application account to new account)", data);
+        const { PUSH, STOP, ADD } = OPCODE_MAP;
+        return postTransact({ code: [PUSH, 1, PUSH, 2, ADD, STOP] });
+    })
+    .then((data) => {
+        smartContractAccountData = data;
+        console.log("postTransact3(Create smart contract account)", data);
+        return getMine();
+    })
+    .then((data) => {
+        console.log("getMine3(Register new smart contract account)", data);
+        return postTransact({
+            to: smartContractAccountData.transaction.data.accountData.codeHash,
+            value: 0,
+            gasLimit: 100,
+        });
+    })
+    .then((data) => {
+        console.log("postTransact4(Executing smart contract code)", data);
         return getMine();
     })
     .then((getMineResponse) => {
-        console.log("Second mine response", getMineResponse);
+        console.log("getMine3(Register all new transactions)", getMineResponse);
         return getBalance();
     })
     .then((balance) => {
-        console.log("Application account balance", balance);
+        console.log("getBalance1(Application account balance)", balance);
         return getBalance(toAccountData.address);
     })
     .then((balance) => {
-        console.log("To account balance", balance);
+        console.log("getBalance2(New Account Balance)", balance);
+        return getBalance(smartContractAccountData.transaction.data.accountData.codeHash);
+    })
+    .then((balance) => {
+        console.log("getBalance3(Smart Contract Account Balance)", balance);
     });

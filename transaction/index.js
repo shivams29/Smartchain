@@ -1,6 +1,7 @@
 const uuid = require("uuid").v4;
 const Account = require("../account");
 const { MINING_REWARD } = require("../config");
+const Interpreter = require("../interpreter");
 const State = require("../store/state");
 
 const TRANSACTION_MAP = {
@@ -10,28 +11,22 @@ const TRANSACTION_MAP = {
 };
 
 class Transaction {
-    constructor({ id, from, to, value, data, signature }) {
+    constructor({ id, from, to, value, data, signature, gasLimit }) {
         this.id = id || uuid();
         this.from = from || "-";
         this.to = to || "-";
         this.value = value || 0;
         this.data = data || "-";
         this.signature = signature || "-";
+        this.gasLimit = gasLimit || 0;
     }
 
     /**
      * Static method for creating different types of transactions based on params sent
-     * @param {
-     *  {
-     *      sender: Account Object;
-     *      receiver: string;
-     *      value: number;
-     *      beneficiary: string;
-     *  }
-     * } transactionDetails Transaction details
-     * @returns {object} Transaction class object
+     * @param {{sender: Account; receiver: string; value: number; beneficiary: string;}} transactionDetails Transaction details
+     * @returns {Transaction} Transaction class object
      */
-    static createTransaction({ sender, receiver, value, beneficiary }) {
+    static createTransaction({ sender, receiver, value, beneficiary, gasLimit }) {
         if (beneficiary) {
             const transactionData = {
                 to: beneficiary,
@@ -42,6 +37,7 @@ class Transaction {
             };
             return new Transaction(transactionData);
         }
+
         if (receiver) {
             // Value exchange transaction
             const transactionData = {
@@ -50,6 +46,7 @@ class Transaction {
                 from: sender.address,
                 to: receiver,
                 value: value,
+                gasLimit: gasLimit || 0,
                 data: {
                     transactionType: TRANSACTION_MAP.TRANSACT,
                 },
@@ -60,7 +57,6 @@ class Transaction {
             });
         } else {
             const transactionData = {
-                from: sender.address,
                 data: {
                     accountData: sender.toJson(),
                     transactionType: TRANSACTION_MAP.CREATE_ACCOUNT,
@@ -72,24 +68,20 @@ class Transaction {
 
     /**
      * Static method for validating standard transactions
-     * @param {object} transaction Transaction object to be validated
-     * @param {object} state World state object
+     * @param {Transaction} transaction Transaction object to be validated
+     * @param {State} state World state object
      * @returns {Promise} Resolve/Reject for transaction validation
      */
     static validateStandardTransaction(transaction, state) {
         return new Promise((resolve, reject) => {
-            const { id, from, signature, to, value } = transaction;
+            const { id, from, signature, to, value, gasLimit } = transaction;
             const transactionData = { ...transaction };
 
             // Deleting signature here because signature is created using transaction data
             delete transactionData.signature;
 
             if (transaction.data.transactionType !== TRANSACTION_MAP.TRANSACT) {
-                return reject(
-                    new Error(
-                        `Incorrect transaction type for transaction id ${id}`
-                    )
-                );
+                return reject(new Error(`Incorrect transaction type for transaction id ${id}`));
             }
 
             if (
@@ -103,24 +95,31 @@ class Transaction {
                 const toAccount = state.getAccount(to);
                 if (!fromAccount) {
                     return reject(
-                        new Error(
-                            `The specified from account - ${from} does not exist.`
-                        )
+                        new Error(`The specified from account - ${from} does not exist.`)
                     );
                 }
                 if (!toAccount) {
+                    return reject(new Error(`The specified to account - ${to} does not exist.`));
+                }
+                if (fromAccount.balance < value + gasLimit) {
                     return reject(
                         new Error(
-                            `The specified to account - ${to} does not exist.`
+                            `The from account - ${from} does not have the required balance of ${
+                                value + gasLimit
+                            } to perform this transaction.`
                         )
                     );
                 }
-                if (fromAccount.balance < value) {
-                    return reject(
-                        new Error(
-                            `The from account - ${from} does not have sufficient balance to perform this transaction.`
-                        )
-                    );
+                if (toAccount.codeHash) {
+                    const interpreter = new Interpreter();
+                    const { gasUsed } = interpreter.runCode(toAccount.code);
+                    if (gasUsed > gasLimit) {
+                        return reject(
+                            new Error(
+                                `Transaction needs more gas. Provided: ${gasLimit}. Needs: ${gasUsed}.`
+                            )
+                        );
+                    }
                 }
                 return resolve();
             } else {
@@ -141,19 +140,10 @@ class Transaction {
     static validateCreateAccountTransaction(transaction) {
         return new Promise((resolve, reject) => {
             const { id } = transaction;
-            if (
-                transaction.data.transactionType !==
-                TRANSACTION_MAP.CREATE_ACCOUNT
-            ) {
-                return reject(
-                    new Error(
-                        `Incorrect transaction type for transaction id ${id}`
-                    )
-                );
+            if (transaction.data.transactionType !== TRANSACTION_MAP.CREATE_ACCOUNT) {
+                return reject(new Error(`Incorrect transaction type for transaction id ${id}`));
             }
-            const requiredCreateAccountTransactionDataFields = Object.keys(
-                new Account().toJson()
-            );
+            const requiredCreateAccountTransactionDataFields = Object.keys(new Account().toJson());
             const receivedCreateAccountTransactionDataFields = Object.keys(
                 transaction.data.accountData
             );
@@ -168,9 +158,7 @@ class Transaction {
                 );
             }
             requiredCreateAccountTransactionDataFields.forEach((field) => {
-                if (
-                    !receivedCreateAccountTransactionDataFields.includes(field)
-                ) {
+                if (!receivedCreateAccountTransactionDataFields.includes(field)) {
                     return reject(
                         `Required account data field ${field} missing in received data for transaction id ${id}`
                     );
@@ -187,14 +175,9 @@ class Transaction {
      */
     static validateMiningRewardTransaction(transaction) {
         return new Promise((resolve, reject) => {
-            if (
-                transaction.data.transactionType !==
-                TRANSACTION_MAP.MINING_REWARD
-            ) {
+            if (transaction.data.transactionType !== TRANSACTION_MAP.MINING_REWARD) {
                 return reject(
-                    new Error(
-                        `Incorrect transaction type for transaction id ${transaction.id}`
-                    )
+                    new Error(`Incorrect transaction type for transaction id ${transaction.id}`)
                 );
             }
             if (transaction.value !== MINING_REWARD) {
@@ -220,20 +203,13 @@ class Transaction {
                 try {
                     switch (transaction.data.transactionType) {
                         case TRANSACTION_MAP.CREATE_ACCOUNT:
-                            await Transaction.validateCreateAccountTransaction(
-                                transaction
-                            );
+                            await Transaction.validateCreateAccountTransaction(transaction);
                             break;
                         case TRANSACTION_MAP.TRANSACT:
-                            await Transaction.validateStandardTransaction(
-                                transaction,
-                                state
-                            );
+                            await Transaction.validateStandardTransaction(transaction, state);
                             break;
                         case TRANSACTION_MAP.MINING_REWARD:
-                            await Transaction.validateMiningRewardTransaction(
-                                transaction
-                            );
+                            await Transaction.validateMiningRewardTransaction(transaction);
                             break;
                         default:
                             break;
@@ -255,12 +231,16 @@ class Transaction {
         switch (transaction.data.transactionType) {
             case TRANSACTION_MAP.CREATE_ACCOUNT:
                 this.runCreateAccountTransaction(transaction, state);
+                console.log(" -- Stored account data.");
                 break;
             case TRANSACTION_MAP.TRANSACT:
                 this.runStandardTransaction(transaction, state);
+                console.log(" -- Updated account data to reflect standard transaction.");
                 break;
             case TRANSACTION_MAP.MINING_REWARD:
                 this.runMiningRewardTransaction(transaction, state);
+                console.log(" -- Updated account data to reflect mining reward.");
+                break;
             default:
                 break;
         }
@@ -273,8 +253,8 @@ class Transaction {
      */
     static runCreateAccountTransaction(transaction, state) {
         const { accountData } = transaction.data;
-        const { address } = accountData;
-        state.putAccount(address, accountData);
+        const { address, codeHash } = accountData;
+        state.putAccount(codeHash ?? address, accountData);
     }
 
     /**
@@ -284,14 +264,28 @@ class Transaction {
      */
     static runStandardTransaction(transaction, state) {
         // Get from account address, to account address and value to be transferred
-        const { from, to, value } = transaction;
+        const { from, to, value, gasLimit } = transaction;
 
         // Get from and to accounts using address
         const fromAccount = state.getAccount(from);
         const toAccount = state.getAccount(to);
 
+        let result,
+            gasUsed = 0;
+
+        if (toAccount.codeHash) {
+            const interpreter = new Interpreter();
+            ({ result, gasUsed } = interpreter.runCode(toAccount.code));
+            console.log(`\n\n Code Value = ${result} \n\n Gas Used = ${gasUsed}`);
+        }
+        // Calculate refund using gasLimit and gasUsed
+        const refund = gasLimit - gasUsed;
+
         // Update balance of accounts
+        fromAccount.balance -= gasLimit;
         fromAccount.balance -= value;
+        fromAccount.balance += refund;
+        toAccount.balance += gasUsed;
         toAccount.balance += value;
 
         // Update state
