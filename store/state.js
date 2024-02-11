@@ -4,6 +4,7 @@ const Trie = require("./trie");
 class State {
     constructor() {
         this.stateTrie = new Trie();
+        this.storageTrieMap = {};
     }
 
     /**
@@ -12,7 +13,13 @@ class State {
      * @param {Account} accountData New account data
      */
     putAccount(address, accountData) {
-        this.stateTrie.put(address, accountData);
+        if (!this.storageTrieMap[address]) {
+            this.storageTrieMap[address] = new Trie();
+        }
+        this.stateTrie.put(address, {
+            ...accountData,
+            storageRoot: this.storageTrieMap[address].rootHash,
+        });
     }
 
     /**
