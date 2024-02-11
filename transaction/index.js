@@ -111,7 +111,7 @@ class Transaction {
                     );
                 }
                 if (toAccount.codeHash) {
-                    const interpreter = new Interpreter();
+                    const interpreter = new Interpreter(state.storageTrieMap[toAccount.codeHash]);
                     const { gasUsed } = interpreter.runCode(toAccount.code);
                     if (gasUsed > gasLimit) {
                         return reject(
@@ -274,7 +274,7 @@ class Transaction {
             gasUsed = 0;
 
         if (toAccount.codeHash) {
-            const interpreter = new Interpreter();
+            const interpreter = new Interpreter(state.storageTrieMap[toAccount.codeHash]);
             ({ result, gasUsed } = interpreter.runCode(toAccount.code));
             console.log(`\n\n Code Value = ${result} \n\n Gas Used = ${gasUsed}`);
         }

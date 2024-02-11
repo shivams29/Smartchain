@@ -73,8 +73,10 @@ postTransact({})
     })
     .then((data) => {
         console.log("postTransact2(Transfer 20 from application account to new account)", data);
-        const { PUSH, STOP, ADD } = OPCODE_MAP;
-        return postTransact({ code: [PUSH, 1, PUSH, 2, ADD, STOP] });
+        const { PUSH, STOP, ADD, STORE, LOAD } = OPCODE_MAP;
+        return postTransact({
+            code: [PUSH, 1, PUSH, 2, ADD, PUSH, "output", STORE, PUSH, "output", LOAD, STOP],
+        });
     })
     .then((data) => {
         smartContractAccountData = data;
