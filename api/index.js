@@ -26,17 +26,29 @@ setTimeout(() => {
     pubSub.broadcastTransaction({ transaction: newTransaction });
 }, 500);
 
+/**
+ * Convert body to json
+ */
 app.use(bodyParser.json());
 
+/**
+ * Homepage
+ */
 app.get("/", (req, res, next) => {
     return res.json("Welcome to homepage");
 });
 
+/**
+ * Blockchain list endpoint
+ */
 app.get("/blockchain", (req, res, next) => {
     const { chain } = mainChain;
     return res.json(chain);
 });
 
+/**
+ * Block mine endpoint
+ */
 app.get("/blockchain/mine", (req, res, next) => {
     const lastBlock = mainChain.chain[mainChain.chain.length - 1];
     const block = Block.mineBlock({
@@ -54,18 +66,25 @@ app.get("/blockchain/mine", (req, res, next) => {
         .catch(next);
 });
 
+/**
+ * Account balance endpoint
+ */
 app.get("/account/balance", (req, res, next) => {
     const { address } = req.query;
     const balance = state.getAccount(address || account.address).balance;
     res.json({ balance });
 });
 
+/**
+ * Transaction endpoint
+ */
 app.post("/account/transact", (req, res, next) => {
-    const { to, value } = req.body;
+    const { to, value, code, gasLimit } = req.body;
     const transaction = Transaction.createTransaction({
-        sender: !to ? new Account() : account,
+        sender: !to ? new Account(code) : account,
         receiver: to,
         value,
+        gasLimit,
     });
     transactionQueue.add(transaction);
     pubSub.broadcastTransaction({ transaction });
@@ -74,6 +93,9 @@ app.post("/account/transact", (req, res, next) => {
     });
 });
 
+/**
+ * Middleware for server error to give 500 response
+ */
 app.use((err, req, res, next) => {
     console.error("Internal Server Error", err);
     return res.status(500).json({ message: err.message });
@@ -81,10 +103,11 @@ app.use((err, req, res, next) => {
 
 const PEER_NODE = process.argv.includes("--peer");
 
-const PORT = PEER_NODE
-    ? Math.floor(2000 + Math.random() * 1000)
-    : ROOT_NODE_PORT;
+const PORT = PEER_NODE ? Math.floor(2000 + Math.random() * 1000) : ROOT_NODE_PORT;
 
+/**
+ * Sync peer node blockchain with ROOT node blockchain
+ */
 if (PEER_NODE) {
     request(`${BASE_URL}:${ROOT_NODE_PORT}/blockchain`, (err, res, body) => {
         const chain = JSON.parse(body);

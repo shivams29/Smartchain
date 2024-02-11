@@ -5,13 +5,24 @@ const { ec, keccakHash } = require("../util");
  * Account class
  */
 class Account {
-    constructor() {
+    constructor(code = []) {
         // Public private key pair object
         this.keyPair = ec.genKeyPair();
         // Address of account which public key converted to hex string using encode.
         this.address = this.keyPair.getPublic().encode("hex");
         // Account starting balance
         this.balance = STARTING_BALANCE;
+        // Code array for smart contracts
+        this.code = code;
+        // This code hash will be used to store account in state and
+        // when same code is provided, then 2 different smart contract accounts will be stored in state.
+        this.generateCodeHash();
+    }
+
+    generateCodeHash() {
+        this.codeHash = this.code.length
+            ? keccakHash(this.address + this.code)
+            : null;
     }
 
     /**
@@ -41,6 +52,8 @@ class Account {
         return {
             address: this.address,
             balance: this.balance,
+            code: this.code,
+            codeHash: this.codeHash,
         };
     }
 }
